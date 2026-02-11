@@ -125,6 +125,7 @@ Dans `Settings > Secrets and variables > Actions`:
 - `Variables`:
   - `ACR_NAME` = ex: `monacr`
   - `ACR_RESOURCE_GROUP` = resource group de l'ACR
+  - `ACR_LOGIN_SERVER` = serveur de connexion exact (ex: `monacr-abc123.azurecr.io`)
   - `IMAGE_NAME` = ex: `irve_ingestion`
 
 ### 4) Déclencher le pipeline
