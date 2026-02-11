@@ -121,8 +121,10 @@ Dans `Settings > Secrets and variables > Actions`:
   - `AZURE_CLIENT_ID` = `APP_ID`
   - `AZURE_TENANT_ID` = `TENANT_ID`
   - `AZURE_SUBSCRIPTION_ID` = `SUBSCRIPTION_ID`
+  - `ACR_SUBSCRIPTION_ID` = subscription qui contient l'ACR (peut être différente)
 - `Variables`:
   - `ACR_NAME` = ex: `monacr`
+  - `ACR_RESOURCE_GROUP` = resource group de l'ACR
   - `IMAGE_NAME` = ex: `irve_ingestion`
 
 ### 4) Déclencher le pipeline

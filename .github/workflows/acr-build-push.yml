@@ -33,14 +33,26 @@ jobs:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
+      - name: Select ACR subscription
+        run: az account set --subscription "${{ secrets.ACR_SUBSCRIPTION_ID }}"
+
+      - name: Resolve ACR login server
+        id: acr
+        run: |
+          LOGIN_SERVER=$(az acr show \
+            --name "${{ vars.ACR_NAME }}" \
+            --resource-group "${{ vars.ACR_RESOURCE_GROUP }}" \
+            --query loginServer -o tsv)
+          echo "login_server=$LOGIN_SERVER" >> "$GITHUB_OUTPUT"
+
       - name: Login to ACR with Azure CLI
-        run: az acr login --name "${{ vars.ACR_NAME }}"
+        run: az acr login --name "${{ vars.ACR_NAME }}" --resource-group "${{ vars.ACR_RESOURCE_GROUP }}"
 
       - name: Extract Docker metadata
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ vars.ACR_NAME }}.azurecr.io/${{ vars.IMAGE_NAME }}
+          images: ${{ steps.acr.outputs.login_server }}/${{ vars.IMAGE_NAME }}
           tags: |
             type=raw,value=latest
             type=sha
