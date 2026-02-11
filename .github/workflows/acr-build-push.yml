@@ -39,11 +39,29 @@ jobs:
       - name: Login to ACR with Azure CLI
         run: az acr login --name "${{ vars.ACR_NAME }}" --resource-group "${{ vars.ACR_RESOURCE_GROUP }}"
 
+      - name: Compute ACR login server
+        id: acr_server
+        run: |
+          LOGIN_SERVER="${{ vars.ACR_LOGIN_SERVER }}"
+          if [ -z "$LOGIN_SERVER" ]; then
+            LOGIN_SERVER=$(az acr show \
+              --name "${{ vars.ACR_NAME }}" \
+              --resource-group "${{ vars.ACR_RESOURCE_GROUP }}" \
+              --query loginServer -o tsv)
+          fi
+
+          if [ -z "$LOGIN_SERVER" ]; then
+            echo "::error::ACR login server is empty. Define variable ACR_LOGIN_SERVER or grant Reader on ACR."
+            exit 1
+          fi
+
+          echo "login_server=$LOGIN_SERVER" >> "$GITHUB_OUTPUT"
+
       - name: Extract Docker metadata
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ vars.ACR_LOGIN_SERVER }}/${{ vars.IMAGE_NAME }}
+          images: ${{ steps.acr_server.outputs.login_server }}/${{ vars.IMAGE_NAME }}
           tags: |
             type=raw,value=latest
             type=sha
