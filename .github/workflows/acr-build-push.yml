@@ -8,8 +8,10 @@ on:
 
 permissions:
   contents: read
+  id-token: write
 
 env:
+  ACR_NAME: coreglobalacr
   ACR_LOGIN_SERVER: coreglobalacr.azurecr.io
   IMAGE_NAME: irve_ingestion
 
@@ -20,12 +22,15 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Login to ACR (Service Principal)
-        uses: docker/login-action@v3
+      - name: Azure Login (OIDC)
+        uses: azure/login@v2
         with:
-          registry: ${{ env.ACR_LOGIN_SERVER }}
-          username: ${{ secrets.ACR_SP_APP_ID }}
-          password: ${{ secrets.ACR_SP_PASSWORD }}
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Login to ACR
+        run: az acr login --name "${{ env.ACR_NAME }}"
 
       - name: Build and push
         uses: docker/build-push-action@v5
