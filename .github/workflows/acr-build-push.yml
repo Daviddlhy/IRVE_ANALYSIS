@@ -1,19 +1,20 @@
-name: Build and Push to ACR
+name: CI/CD - Build and Push Docker image to ACR
 
 on:
   push:
     branches:
       - main
+    paths:
+      - "Dockerfile"
+      - "pyproject.toml"
+      - "uv.lock"
+      - "main.py"
+      - ".github/workflows/acr-build-push.yml"
   workflow_dispatch:
 
 permissions:
   contents: read
   id-token: write
-
-env:
-  ACR_NAME: coreglobalacr
-  ACR_LOGIN_SERVER: coreglobalacr.azurecr.io
-  IMAGE_NAME: irve_ingestion
 
 jobs:
   build-and-push:
@@ -22,21 +23,34 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Azure Login (OIDC)
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Azure login (OIDC)
         uses: azure/login@v2
         with:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
-      - name: Login to ACR
-        run: az acr login --name "${{ env.ACR_NAME }}"
+      - name: Login to ACR with Azure CLI
+        run: az acr login --name "${{ vars.ACR_NAME }}"
+
+      - name: Extract Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ vars.ACR_NAME }}.azurecr.io/${{ vars.IMAGE_NAME }}
+          tags: |
+            type=raw,value=latest
+            type=sha
 
       - name: Build and push
         uses: docker/build-push-action@v5
         with:
           context: .
           push: true
-          tags: |
-            ${{ env.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:latest
-            ${{ env.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
